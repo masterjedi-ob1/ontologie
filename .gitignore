@@ -1,0 +1,7 @@
+# Taruvi credentials: never commit
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+logs/
