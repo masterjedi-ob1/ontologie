@@ -124,6 +124,9 @@ const talentSkills: TalentSkill[] = ts(JORDAN, [
 ]);
 
 // Deterministic synthetic cohort (40 people) for the Navigator dashboard.
+// Each person is drawn toward one role archetype (holding 45-100% of its
+// skills near the required level) plus a few unrelated skills, so the cohort
+// shows a realistic READY / CLOSE / STRETCH spread instead of noise.
 let seed = 42;
 const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
 const FIRST = ["Ava", "Malik", "Sofia", "Deshawn", "Mia", "Luis", "Imani", "Tyler", "Zara", "Andre", "Grace", "Omar", "Nia", "Ethan", "Leah", "Marcus", "Priya", "Caleb", "Jada", "Noah"];
@@ -131,11 +134,19 @@ const LAST = ["Johnson", "Nguyen", "Patel", "Brooks", "Garcia", "Kowalski", "Wil
 for (let i = 0; i < 40; i++) {
   const id = `t${i + 1}`;
   talent.push({ id, name: `${FIRST[i % FIRST.length]} ${LAST[(i * 7) % LAST.length]}`, headline: null });
-  const picks = new Set<string>();
-  const n = 4 + Math.floor(rand() * 6);
-  while (picks.size < n) picks.add(skills[Math.floor(rand() * skills.length)].id);
-  for (const skill_id of picks) {
-    talentSkills.push({ talent_id: id, skill_id, level: 1 + Math.floor(rand() * 3), evidence: rand() > 0.6 ? "verified" : "self" });
+  const archetype = roles[i % roles.length].id;
+  const coverage = 0.45 + rand() * 0.55;
+  const levels = new Map<string, number>();
+  for (const r of roleSkills.filter((x) => x.role_id === archetype)) {
+    if (rand() < coverage) levels.set(r.skill_id, Math.max(1, Math.min(4, r.level + (rand() < 0.3 ? -1 : 0))));
+  }
+  const extras = 1 + Math.floor(rand() * 3);
+  for (let k = 0; k < extras; k++) {
+    const s = skills[Math.floor(rand() * skills.length)].id;
+    if (!levels.has(s)) levels.set(s, 1 + Math.floor(rand() * 2));
+  }
+  for (const [skill_id, level] of levels) {
+    talentSkills.push({ talent_id: id, skill_id, level, evidence: rand() > 0.6 ? "verified" : "self" });
   }
 }
 
